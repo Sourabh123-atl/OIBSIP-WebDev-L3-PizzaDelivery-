@@ -8,11 +8,15 @@ import {
   FaEyeSlash,
 } from "react-icons/fa";
 import authPizza from "../../assets/auth-pizza.png";
+import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 
 function Register() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -31,186 +35,177 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password) {
+      toast.error("Please fill in all fields.");
       return;
     }
 
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      alert(data.message);
-
-      if (data.success) {
-        navigate("/login");
-      }
+      const res = await register(
+        formData.name.trim(),
+        formData.email.trim(),
+        formData.password
+      );
+      toast.success(res.message || "Account created successfully! Welcome to Pizzario 🍕");
+      navigate("/");
     } catch (error) {
-      alert("Something went wrong.");
-      console.error(error);
+      toast.error(error.message || "Registration failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <section className="min-h-screen bg-[#FFF8F2] flex items-center justify-center p-6">
-      
-      {/* Single clean card with forced inline padding for 100% reliability */}
-      <div 
-        style={{ padding: "48px", boxSizing: "border-box" }} 
-        className="w-full max-w-[540px] rounded-3xl bg-white shadow-2xl"
-      >
-        
+    <section className="min-h-screen bg-[#FFF8F2] flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-[500px] rounded-3xl bg-white shadow-xl p-8 sm:p-12 border border-orange-50">
         {/* Header */}
         <div className="flex flex-col items-center text-center">
-          <img
-            src={authPizza}
-            alt="Pizza"
-            className="h-20 w-20 object-contain"
-          />
+          <Link to="/" className="group">
+            <img
+              src={authPizza}
+              alt="Pizza"
+              className="h-20 w-20 object-contain transition group-hover:rotate-12 duration-300"
+            />
+          </Link>
 
           <h1 className="mt-4 text-3xl font-black tracking-wide text-[#252642]">
-            PIZZARIO
+            PIZZA<span className="text-red-600">RIO</span>
           </h1>
 
-          <h2 className="mt-2 text-4xl font-bold text-[#252642]">
+          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-[#252642]">
             Create Account
           </h2>
 
-          <p className="mt-3 text-base text-gray-500">
-            Join Pizzario and start enjoying delicious pizzas delivered to your door.
+          <p className="mt-2 text-sm text-gray-500">
+            Join Pizzario and get fast delivery, exclusive deals, and easy ordering.
           </p>
         </div>
 
         {/* Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           {/* Full Name */}
-          <div className="w-full">
-            <label className="mb-2.5 block text-base font-semibold text-[#252642]">
+          <div>
+            <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wider">
               Full Name
             </label>
-            <div className="flex items-center rounded-xl border border-gray-300 bg-white px-5 py-4 transition duration-300 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/20">
-              <FaUser className="text-gray-400 text-lg shrink-0" />
+            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-3 transition focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/10">
+              <FaUser className="text-gray-400 text-sm shrink-0" />
               <input
                 type="text"
                 name="name"
+                required
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Enter your full name"
-                className="ml-3.5 w-full min-w-0 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
+                placeholder="Sourabh Patel"
+                className="ml-3 w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none"
               />
             </div>
           </div>
 
-          {/* Email Address */}
-          <div className="w-full">
-            <label className="mb-2.5 block text-base font-semibold text-[#252642]">
+          {/* Email */}
+          <div>
+            <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wider">
               Email Address
             </label>
-            <div className="flex items-center rounded-xl border border-gray-300 bg-white px-5 py-4 transition duration-300 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/20">
-              <FaEnvelope className="text-gray-400 text-lg shrink-0" />
+            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-3 transition focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/10">
+              <FaEnvelope className="text-gray-400 text-sm shrink-0" />
               <input
                 type="email"
                 name="email"
+                required
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Enter your email"
-                className="ml-3.5 w-full min-w-0 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
+                placeholder="sourabh@example.com"
+                className="ml-3 w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none"
               />
             </div>
           </div>
 
           {/* Password */}
-          <div className="w-full">
-            <label className="mb-2.5 block text-base font-semibold text-[#252642]">
+          <div>
+            <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wider">
               Password
             </label>
-            <div className="flex items-center rounded-xl border border-gray-300 bg-white px-5 py-4 transition duration-300 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/20">
-              <FaLock className="text-gray-400 text-lg shrink-0" />
+            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-3 transition focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/10">
+              <FaLock className="text-gray-400 text-sm shrink-0" />
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
+                required
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password"
-                className="ml-3.5 w-full min-w-0 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
+                placeholder="At least 6 characters"
+                className="ml-3 w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="ml-2 text-gray-400 hover:text-gray-600 focus:outline-none shrink-0"
+                className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0"
               >
-                {showPassword ? (
-                  <FaEyeSlash className="text-lg" />
-                ) : (
-                  <FaEye className="text-lg" />
-                )}
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
           </div>
 
           {/* Confirm Password */}
-          <div className="w-full">
-            <label className="mb-2.5 block text-base font-semibold text-[#252642]">
+          <div>
+            <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wider">
               Confirm Password
             </label>
-            <div className="flex items-center rounded-xl border border-gray-300 bg-white px-5 py-4 transition duration-300 focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/20">
-              <FaLock className="text-gray-400 text-lg shrink-0" />
+            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-3 transition focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/10">
+              <FaLock className="text-gray-400 text-sm shrink-0" />
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
+                required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirm your password"
-                className="ml-3.5 w-full min-w-0 bg-transparent text-base text-gray-800 outline-none placeholder:text-gray-400"
+                placeholder="Repeat your password"
+                className="ml-3 w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="ml-2 text-gray-400 hover:text-gray-600 focus:outline-none shrink-0"
+                className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0"
               >
-                {showConfirmPassword ? (
-                  <FaEyeSlash className="text-lg" />
-                ) : (
-                  <FaEye className="text-lg" />
-                )}
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* Register Button */}
           <button
             type="submit"
-            className="w-full rounded-xl bg-red-600 py-4 text-lg font-semibold text-white shadow-md transition duration-300 hover:bg-red-700 active:scale-[0.99] mt-2"
+            disabled={loading}
+            className="w-full rounded-xl bg-red-600 py-3.5 text-base font-bold text-white shadow-md transition duration-300 hover:bg-red-700 active:scale-98 disabled:opacity-50 cursor-pointer mt-2"
           >
-            Create Account
+            {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
         {/* Footer */}
-        <div className="mt-8 border-t border-gray-100 pt-6">
-          <p className="text-center text-sm sm:text-base text-gray-600">
+        <div className="mt-8 border-t border-gray-100 pt-6 text-center">
+          <p className="text-xs sm:text-sm text-gray-600">
             Already have an account?{" "}
             <Link
               to="/login"
-              className="font-semibold text-red-600 hover:underline"
+              className="font-bold text-red-600 hover:underline"
             >
-              Login
+              Log In
             </Link>
           </p>
         </div>
-
       </div>
     </section>
   );

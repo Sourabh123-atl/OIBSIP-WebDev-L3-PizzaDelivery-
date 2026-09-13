@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import {
   FaFacebookF,
   FaInstagram,
@@ -11,156 +12,137 @@ import {
 function Footer() {
   return (
     <footer id="contact" className="bg-[#FFF8F2] border-t border-[#E8DDD1]">
-
-      <div className="max-w-[1650px] mx-auto px-10 lg:px-20 py-20">
-
-        <div className="grid gap-14 md:grid-cols-2 lg:grid-cols-4">
-
+      <div className="max-w-[1650px] mx-auto px-6 sm:px-10 lg:px-20 py-16 sm:py-20">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
-
           <div>
-
-            <h2 className="flex items-center gap-3 text-4xl font-black text-[#252642]">
-              🍕 PIZZARIO
+            <h2 className="flex items-center gap-2 text-3xl font-black text-[#252642]">
+              🍕 PIZZA<span className="text-red-600">RIO</span>
             </h2>
 
-            <p className="mt-6 text-lg leading-8 text-gray-600">
-              Fresh handcrafted pizzas made with premium ingredients,
-              authentic recipes and delivered hot to your doorstep.
+            <p className="mt-4 text-base leading-relaxed text-gray-600">
+              Fresh handcrafted pizzas made with premium mozzarella,
+              authentic recipes, and delivered piping hot to your doorstep.
             </p>
 
-            <div className="mt-8 flex gap-4">
-
+            <div className="mt-6 flex gap-3">
               <a
-                href="#"
-                className="flex h-11 w-11 items-center justify-center border border-gray-300 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600"
+                href="https://facebook.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-gray-200 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600 shadow-xs"
               >
                 <FaFacebookF />
               </a>
 
               <a
-                href="#"
-                className="flex h-11 w-11 items-center justify-center border border-gray-300 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600"
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-gray-200 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600 shadow-xs"
               >
                 <FaInstagram />
               </a>
 
               <a
-                href="#"
-                className="flex h-11 w-11 items-center justify-center border border-gray-300 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600"
+                href="https://twitter.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-gray-200 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600 shadow-xs"
               >
                 <FaTwitter />
               </a>
 
               <a
-                href="#"
-                className="flex h-11 w-11 items-center justify-center border border-gray-300 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600"
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-xl bg-white border border-gray-200 text-[#252642] transition hover:bg-red-600 hover:text-white hover:border-red-600 shadow-xs"
               >
                 <FaLinkedinIn />
               </a>
-
             </div>
-
           </div>
 
           {/* Quick Links */}
-
           <div>
-
-            <h3 className="text-2xl font-bold text-[#252642]">
-              Quick Links
-            </h3>
-
-            <ul className="mt-6 space-y-4 text-lg text-gray-600">
-
-              <li><a href="#home" className="hover:text-red-600 transition">Home</a></li>
-              <li><a href="#menu" className="hover:text-red-600 transition">Menu</a></li>
-              <li><a href="#about" className="hover:text-red-600 transition">About</a></li>
-              <li><a href="#contact" className="hover:text-red-600 transition">Contact</a></li>
-
+            <h3 className="text-xl font-bold text-[#252642]">Quick Links</h3>
+            <ul className="mt-4 space-y-2.5 text-base text-gray-600">
+              <li>
+                <Link to="/" className="hover:text-red-600 transition">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link to="/menu" className="hover:text-red-600 transition">
+                  Full Menu
+                </Link>
+              </li>
+              <li>
+                <Link to="/cart" className="hover:text-red-600 transition">
+                  Shopping Cart
+                </Link>
+              </li>
+              <li>
+                <Link to="/my-orders" className="hover:text-red-600 transition">
+                  Order Tracking
+                </Link>
+              </li>
+              <li>
+                <Link to="/admin" className="hover:text-red-600 transition font-bold text-red-600">
+                  Admin Console
+                </Link>
+              </li>
             </ul>
-
           </div>
 
-          {/* Contact */}
-
+          {/* Contact Details */}
           <div>
-
-            <h3 className="text-2xl font-bold text-[#252642]">
-              Contact
-            </h3>
-
-            <div className="mt-6 space-y-5 text-lg text-gray-600">
-
-              <div className="flex gap-3">
-                <FaMapMarkerAlt className="mt-1 text-red-600"/>
-                <span>Karachi, Pakistan</span>
+            <h3 className="text-xl font-bold text-[#252642]">Get in Touch</h3>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
+              <div className="flex items-center gap-3">
+                <FaMapMarkerAlt className="text-red-600 shrink-0" />
+                <span>MG Road, Pune, Maharashtra, India</span>
               </div>
-
-              <div className="flex gap-3">
-                <FaPhoneAlt className="mt-1 text-red-600"/>
-                <span>+92 300 1234567</span>
+              <div className="flex items-center gap-3">
+                <FaPhoneAlt className="text-red-600 shrink-0" />
+                <span>+91 98765 43210</span>
               </div>
-
-              <div className="flex gap-3">
-                <FaEnvelope className="mt-1 text-red-600"/>
+              <div className="flex items-center gap-3">
+                <FaEnvelope className="text-red-600 shrink-0" />
                 <span>support@pizzario.com</span>
               </div>
-
             </div>
-
           </div>
 
-          {/* Opening Hours */}
-
+          {/* Hours */}
           <div>
-
-            <h3 className="text-2xl font-bold text-[#252642]">
-              Opening Hours
-            </h3>
-
-            <div className="mt-6 space-y-5 text-lg text-gray-600">
-
+            <h3 className="text-xl font-bold text-[#252642]">Opening Hours</h3>
+            <div className="mt-4 space-y-3 text-sm text-gray-600">
               <div>
-
-                <p>Mon – Fri</p>
-
-                <p className="font-bold text-[#252642] mt-1">
-                  10:00 AM – 11:00 PM
+                <p className="text-xs text-gray-400 uppercase font-semibold">
+                  Monday – Friday
                 </p>
-
+                <p className="font-bold text-[#252642]">10:00 AM – 11:30 PM</p>
               </div>
-
               <div>
-
-                <p>Sat – Sun</p>
-
-                <p className="font-bold text-[#252642] mt-1">
-                  11:00 AM – 12:00 AM
+                <p className="text-xs text-gray-400 uppercase font-semibold">
+                  Saturday – Sunday
                 </p>
-
+                <p className="font-bold text-[#252642]">10:00 AM – 12:30 AM</p>
               </div>
-
             </div>
-
           </div>
-
         </div>
-
       </div>
 
-      <div className="border-t border-[#E8DDD1]">
-
-        <div className="max-w-[1650px] mx-auto py-6">
-
-          <p className="text-center text-gray-500">
-            © 2026 AreeshaKhan. All Rights Reserved. • Crafted with ❤️ for Pizza Lovers.
-          </p>
-
+      <div className="border-t border-[#E8DDD1] py-6 px-4">
+        <div className="max-w-[1650px] mx-auto text-center text-xs text-gray-500">
+          © 2026 Pizzario. Developed by{" "}
+          <strong className="text-gray-800">Sourabh Patel</strong> • OASIS
+          Infobyte Web Development Internship (OIBSIP Level 3).
         </div>
-
       </div>
-
     </footer>
   );
 }

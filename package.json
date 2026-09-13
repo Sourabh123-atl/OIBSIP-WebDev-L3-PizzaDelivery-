@@ -1,0 +1,17 @@
+{
+  "name": "pizzario-fullstack",
+  "version": "1.0.0",
+  "description": "Pizzario - Full Stack Pizza Delivery Web Application with Admin Panel",
+  "scripts": {
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "install:all": "npm run install:server && npm run install:client",
+    "build": "cd client && npm install && npm run build",
+    "start": "node server/server.js",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev"
+  },
+  "keywords": ["pizza", "delivery", "mern", "react", "express", "mongodb", "admin-panel"],
+  "author": "Sourabh Patel",
+  "license": "MIT"
+}
