@@ -6,6 +6,7 @@ import {
   FaEye,
   FaEyeSlash,
   FaShieldAlt,
+  FaArrowRight,
 } from "react-icons/fa";
 import authPizza from "../../assets/auth-pizza.png";
 import { useAuth } from "../../context/AuthContext";
@@ -67,55 +68,69 @@ function Login() {
   };
 
   return (
-    <section className="min-h-screen bg-[#FFF8F2] flex items-center justify-center p-4 sm:p-6">
-      <div className="w-full max-w-[500px] rounded-3xl bg-white shadow-xl p-8 sm:p-12 border border-orange-50">
-        {/* Header */}
+    <section className="min-h-screen bg-[#FFF8F2] flex items-center justify-center py-12 px-4 sm:px-6 relative overflow-hidden">
+      {/* Decorative background glows */}
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-red-200/40 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-orange-200/40 rounded-full blur-3xl pointer-events-none"></div>
+
+      {/* Main Container */}
+      <div className="w-full max-w-[480px] bg-white rounded-[32px] shadow-xl p-8 sm:p-10 border border-orange-100 relative z-10 transition-all duration-300">
+        
+        {/* Header with Logo */}
         <div className="flex flex-col items-center text-center">
-          <Link to="/" className="group">
-            <img
-              src={authPizza}
-              alt="Pizza"
-              className="h-20 w-20 object-contain transition group-hover:rotate-12 duration-300"
-            />
+          <Link to="/" className="group inline-block mb-3">
+            <div className="w-20 h-20 rounded-2xl bg-orange-50/70 p-2 flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:bg-orange-100/70">
+              <img
+                src={authPizza}
+                alt="Pizza"
+                className="w-16 h-16 object-contain"
+              />
+            </div>
           </Link>
 
-          <h1 className="mt-4 text-3xl font-black tracking-wide text-[#252642]">
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#252642]">
             PIZZA<span className="text-red-600">RIO</span>
           </h1>
 
-          <h2 className="mt-2 text-2xl sm:text-3xl font-bold text-[#252642]">
+          <h2 className="mt-1 text-xl sm:text-2xl font-bold text-gray-800">
             Welcome Back
           </h2>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Sign in to manage orders, customize pizzas, and explore great deals.
+          <p className="mt-1.5 text-sm text-gray-500 max-w-sm">
+            Sign in to order your favorite pizzas, track deliveries, and manage your account.
           </p>
         </div>
 
-        {/* Demo Credentials Helper Pill */}
-        <div className="mt-6 p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-900">
-          <div className="flex items-center gap-2">
-            <FaShieldAlt className="text-amber-600 text-sm" />
-            <span>Need Admin access?</span>
+        {/* Demo Admin Shortcut Banner */}
+        <div className="mt-6 p-3.5 bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center text-xs shadow-xs">
+              <FaShieldAlt />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-gray-800 leading-tight">Admin Demo</p>
+              <p className="text-[11px] text-gray-500">One-click evaluation</p>
+            </div>
           </div>
+
           <button
             type="button"
             onClick={fillDemoAdmin}
-            className="font-bold text-red-600 hover:underline cursor-pointer bg-white px-3 py-1 rounded-lg shadow-xs border border-amber-200"
+            className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-red-600 hover:text-white border border-red-200 text-xs font-bold text-red-600 transition-all duration-200 shadow-xs cursor-pointer active:scale-95"
           >
-            Use Demo Admin
+            Auto-fill
           </button>
         </div>
 
         {/* Form */}
-        <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
-          {/* Email */}
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          {/* Email Input */}
           <div>
-            <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wider">
+            <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">
               Email Address
             </label>
-            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-3.5 transition focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/10">
-              <FaEnvelope className="text-gray-400 text-base shrink-0" />
+            <div className="auth-input-group">
+              <FaEnvelope className="auth-input-icon" />
               <input
                 type="email"
                 name="email"
@@ -123,18 +138,27 @@ function Login() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="you@example.com"
-                className="ml-3 w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none"
+                className="auth-input"
               />
             </div>
           </div>
 
-          {/* Password */}
+          {/* Password Input */}
           <div>
-            <label className="mb-2 block text-xs font-bold text-gray-700 uppercase tracking-wider">
-              Password
-            </label>
-            <div className="flex items-center rounded-xl border border-gray-200 bg-white px-4 py-3.5 transition focus-within:border-red-600 focus-within:ring-2 focus-within:ring-red-600/10">
-              <FaLock className="text-gray-400 text-base shrink-0" />
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-600">
+                Password
+              </label>
+              <Link
+                to="/forgot-password"
+                className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline transition"
+              >
+                Forgot?
+              </Link>
+            </div>
+
+            <div className="auth-input-group">
+              <FaLock className="auth-input-icon" />
               <input
                 type={showPassword ? "text" : "password"}
                 name="password"
@@ -142,56 +166,56 @@ function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
-                className="ml-3 w-full min-w-0 bg-transparent text-sm text-gray-800 outline-none"
+                className="auth-input"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="ml-2 text-gray-400 hover:text-gray-600 cursor-pointer shrink-0"
+                className="absolute right-4 text-gray-400 hover:text-gray-600 cursor-pointer p-1 text-sm transition"
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
             </div>
           </div>
 
-          {/* Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between text-xs pt-1">
-            <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none">
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center gap-2.5 text-xs font-medium text-gray-600 cursor-pointer select-none">
               <input
                 type="checkbox"
                 defaultChecked
-                className="h-3.5 w-3.5 rounded accent-red-600 cursor-pointer"
+                className="w-4 h-4 rounded border-gray-300 text-red-600 accent-red-600 cursor-pointer"
               />
-              Remember Me
+              Remember my session
             </label>
-
-            <Link
-              to="/forgot-password"
-              className="font-bold text-red-600 hover:underline"
-            >
-              Forgot Password?
-            </Link>
           </div>
 
-          {/* Login Button */}
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-xl bg-red-600 py-3.5 text-base font-bold text-white shadow-md transition duration-300 hover:bg-red-700 active:scale-98 disabled:opacity-50 cursor-pointer"
+            className="w-full h-13 mt-2 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white font-bold text-base shadow-lg shadow-red-500/25 hover:shadow-red-500/35 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
           >
-            {loading ? "Signing in..." : "Login"}
+            {loading ? (
+              <span>Signing in...</span>
+            ) : (
+              <>
+                <span>Sign In to Account</span>
+                <FaArrowRight className="text-xs" />
+              </>
+            )}
           </button>
         </form>
 
-        {/* Footer */}
-        <div className="mt-8 border-t border-gray-100 pt-6 text-center">
-          <p className="text-xs sm:text-sm text-gray-600">
+        {/* Card Footer */}
+        <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+          <p className="text-sm text-gray-500">
             Don't have an account?{" "}
             <Link
               to="/register"
-              className="font-bold text-red-600 hover:underline"
+              className="font-bold text-red-600 hover:text-red-700 hover:underline transition"
             >
-              Create an Account
+              Create Account
             </Link>
           </p>
         </div>
