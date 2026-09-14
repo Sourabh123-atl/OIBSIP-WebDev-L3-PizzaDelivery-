@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import AdminLayout from "./AdminLayout";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 import { toast } from "react-toastify";
 
 function AdminDashboard() {
@@ -34,7 +34,7 @@ function AdminDashboard() {
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const res = await fetch(`${API_BASE_URL}/admin/stats`, { headers });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success && data.stats) {
         setStats(data.stats);
         if (isManual) toast.success("Dashboard metrics refreshed!");
@@ -62,7 +62,7 @@ function AdminDashboard() {
         body: JSON.stringify({ orderStatus: newStatus }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success) {
         toast.success(`Order status updated to "${newStatus}"!`);
         fetchStats();

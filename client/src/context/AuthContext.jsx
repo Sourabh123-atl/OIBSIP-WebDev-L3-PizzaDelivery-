@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { API_BASE_URL } from "../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../config/api";
 
 const AuthContext = createContext(null);
 
@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       setLoading(false);
 
       if (!res.ok || !data.success) {
@@ -65,7 +65,7 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       setLoading(false);
 
       if (!res.ok || !data.success) {
@@ -95,7 +95,7 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       setLoading(false);
 
       if (!res.ok || !data.success) {

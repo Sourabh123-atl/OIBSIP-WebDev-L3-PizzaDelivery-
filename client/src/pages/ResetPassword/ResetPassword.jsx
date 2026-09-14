@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import authPizza from "../../assets/auth-pizza.png";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -35,7 +35,7 @@ function ResetPassword() {
         }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       setLoading(false);
 
       if (!res.ok || !data.success) {

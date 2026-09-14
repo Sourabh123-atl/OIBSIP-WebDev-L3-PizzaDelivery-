@@ -11,7 +11,7 @@ import {
 } from "react-icons/fa";
 import AdminLayout from "./AdminLayout";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 import { toast } from "react-toastify";
 
 const STATUSES = [
@@ -43,7 +43,7 @@ function AdminOrders() {
           : `${API_BASE_URL}/admin/orders?status=${encodeURIComponent(selectedStatus)}`;
 
       const res = await fetch(url, { headers });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success && data.orders) {
         setOrders(data.orders);
         if (isManual) toast.success("Orders refreshed from database!");
@@ -71,7 +71,7 @@ function AdminOrders() {
         body: JSON.stringify({ orderStatus: newStatus }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success) {
         toast.success(`Order #${String(orderId).slice(-6)} updated to "${newStatus}"!`);
         fetchOrders();

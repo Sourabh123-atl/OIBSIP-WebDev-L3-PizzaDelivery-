@@ -4,7 +4,7 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useCart } from "../../context/CartContext";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 
 // Local image imports for reliable fallbacks
 import pepperoni from "../../assets/pizzas/pepperoni.png";
@@ -60,7 +60,7 @@ function Menu() {
   useEffect(() => {
     // Try fetching from backend API
     fetch(`${API_BASE_URL}/pizzas`)
-      .then((res) => res.json())
+      .then((res) => parseJsonResponse(res))
       .then((data) => {
         if (data.success && data.data && data.data.length > 0) {
           // Map backend items or mix with images

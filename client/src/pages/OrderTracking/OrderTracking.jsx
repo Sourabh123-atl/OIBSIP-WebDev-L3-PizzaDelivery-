@@ -13,7 +13,7 @@ import {
 } from "react-icons/fa";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 import { toast } from "react-toastify";
 
 const STAGES = [
@@ -35,7 +35,7 @@ function OrderTracking() {
     if (isManual) setRefreshing(true);
     try {
       const res = await fetch(`${API_BASE_URL}/orders/${id}`);
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success && data.order) {
         setOrder(data.order);
         if (isManual) toast.success("Order status refreshed!");

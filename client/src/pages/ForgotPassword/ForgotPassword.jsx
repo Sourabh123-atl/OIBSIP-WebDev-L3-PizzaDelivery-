@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { FaEnvelope, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import authPizza from "../../assets/auth-pizza.png";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 
 function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -25,7 +25,7 @@ function ForgotPassword() {
         body: JSON.stringify({ email: email.trim() }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       setLoading(false);
 
       if (!res.ok || !data.success) {

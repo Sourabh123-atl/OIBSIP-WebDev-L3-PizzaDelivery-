@@ -10,7 +10,7 @@ import {
 } from "react-icons/fa";
 import AdminLayout from "./AdminLayout";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 import { toast } from "react-toastify";
 
 const CATEGORIES = ["Pizza", "Burger", "Pasta", "Sides", "Drinks", "Desserts"];
@@ -36,7 +36,7 @@ function AdminMenu() {
   const fetchMenu = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/pizzas`);
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success && data.data) {
         setItems(data.data);
       }
@@ -105,7 +105,7 @@ function AdminMenu() {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success) {
         toast.success(
           editingItem ? "Item updated successfully!" : "New item added to menu!"
@@ -133,7 +133,7 @@ function AdminMenu() {
         headers,
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success) {
         toast.success(`"${item.name}" deleted from menu.`);
         fetchMenu();

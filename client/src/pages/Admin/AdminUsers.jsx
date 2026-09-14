@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FaUserShield, FaUser, FaSyncAlt } from "react-icons/fa";
 import AdminLayout from "./AdminLayout";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 import { toast } from "react-toastify";
 
 function AdminUsers() {
@@ -18,7 +18,7 @@ function AdminUsers() {
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
       const res = await fetch(`${API_BASE_URL}/admin/users`, { headers });
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success && data.users) {
         setUsers(data.users);
         if (isManual) toast.success("Users list refreshed!");
@@ -47,7 +47,7 @@ function AdminUsers() {
         body: JSON.stringify({ role: newRole }),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       if (data.success) {
         toast.success(data.message || `User role updated to ${newRole}`);
         fetchUsers();

@@ -10,7 +10,7 @@ import {
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 
 function MyOrders() {
   const { token } = useAuth();
@@ -24,7 +24,7 @@ function MyOrders() {
         if (token) headers["Authorization"] = `Bearer ${token}`;
 
         const res = await fetch(`${API_BASE_URL}/orders/my-orders`, { headers });
-        const data = await res.json();
+        const data = await parseJsonResponse(res);
         if (data.success && data.orders) {
           setOrders(data.orders);
         }

@@ -12,7 +12,7 @@ import Footer from "../../components/Footer";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL, parseJsonResponse } from "../../config/api";
 
 function Checkout() {
   const { cart, subtotal, deliveryFee, tax, total, clearCart } = useCart();
@@ -91,7 +91,7 @@ function Checkout() {
         body: JSON.stringify(orderPayload),
       });
 
-      const data = await res.json();
+      const data = await parseJsonResponse(res);
       setLoading(false);
 
       if (!res.ok || !data.success) {
