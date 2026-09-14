@@ -3,45 +3,64 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 
-// Fallback in-memory users in case MongoDB is unreachable in local dev
+// Fallback in-memory users for offline local dev mode
 const memoryUsers = [];
 
-// Helper to generate JWT
+// Initialize default in-memory admin for offline development fallback
+(async () => {
+  try {
+    const hashedAdminPass = await bcrypt.hash("admin123", 10);
+    memoryUsers.push({
+      _id: "mem_admin_01",
+      id: "mem_admin_01",
+      name: "Admin Manager",
+      email: "admin@pizzario.com",
+      password: hashedAdminPass,
+      role: "admin",
+    });
+  } catch (err) {
+    console.error("In-memory admin init error:", err.message);
+  }
+})();
+
+// Helper to generate JWT token
 const generateToken = (user) => {
+  const userId = user._id ? user._id.toString() : user.id;
   return jwt.sign(
     {
-      id: user._id || user.id,
+      id: userId,
+      _id: userId,
       name: user.name,
       email: user.email,
       role: user.role,
     },
-    process.env.JWT_SECRET || "pizzario_default_secret_key_2026",
+    process.env.JWT_SECRET || "pizzario_super_secret_jwt_key_2026",
     {
       expiresIn: "7d",
     }
   );
 };
 
-// Register User
+// Customer Registration (POST /api/auth/register)
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please fill all required fields.",
+        message: "Please fill in all required fields (name, email, password).",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters long.",
       });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-
-    // Determine initial role: admin@pizzario.com is always admin
-    const userRole =
-      role === "admin" || normalizedEmail === "admin@pizzario.com"
-        ? "admin"
-        : "user";
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     try {
@@ -49,7 +68,7 @@ const registerUser = async (req, res) => {
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: "Email is already registered.",
+          message: "An account with this email already exists.",
         });
       }
 
@@ -57,7 +76,7 @@ const registerUser = async (req, res) => {
         name: name.trim(),
         email: normalizedEmail,
         password: hashedPassword,
-        role: userRole,
+        role: "user", // Default normal customer
       });
 
       const token = generateToken(user);
@@ -68,18 +87,19 @@ const registerUser = async (req, res) => {
         token,
         user: {
           id: user._id,
+          _id: user._id,
           name: user.name,
           email: user.email,
           role: user.role,
         },
       });
     } catch (dbErr) {
-      // Offline fallback
+      // In-memory offline fallback
       const existingMem = memoryUsers.find((u) => u.email === normalizedEmail);
       if (existingMem) {
         return res.status(400).json({
           success: false,
-          message: "Email is already registered.",
+          message: "An account with this email already exists.",
         });
       }
 
@@ -89,7 +109,7 @@ const registerUser = async (req, res) => {
         name: name.trim(),
         email: normalizedEmail,
         password: hashedPassword,
-        role: userRole,
+        role: "user",
       };
       memoryUsers.push(memUser);
 
@@ -97,10 +117,11 @@ const registerUser = async (req, res) => {
 
       return res.status(201).json({
         success: true,
-        message: "Registration successful! (Demo mode)",
+        message: "Registration successful! Welcome to Pizzario 🍕",
         token,
         user: {
           id: memUser._id,
+          _id: memUser._id,
           name: memUser.name,
           email: memUser.email,
           role: memUser.role,
@@ -108,14 +129,14 @@ const registerUser = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || "Registration failed.",
     });
   }
 };
 
-// Login User
+// Customer Login (POST /api/auth/login)
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -123,28 +144,11 @@ const loginUser = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Please provide email and password.",
+        message: "Please provide your email and password.",
       });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-
-    // Default admin shortcut for instant evaluation:
-    if (normalizedEmail === "admin@pizzario.com" && password === "admin123") {
-      const defaultAdmin = {
-        _id: "admin_seed_id",
-        name: "Admin Manager",
-        email: "admin@pizzario.com",
-        role: "admin",
-      };
-      const token = generateToken(defaultAdmin);
-      return res.status(200).json({
-        success: true,
-        message: "Admin login successful!",
-        token,
-        user: defaultAdmin,
-      });
-    }
 
     let user;
     try {
@@ -174,26 +178,97 @@ const loginUser = async (req, res) => {
 
     const token = generateToken(user);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Login successful! Welcome back.",
       token,
       user: {
         id: user._id || user.id,
+        _id: user._id || user.id,
         name: user.name,
         email: user.email,
         role: user.role,
       },
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || "Login failed.",
     });
   }
 };
 
-// Forgot Password
+// Admin Login (POST /api/admin/login)
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide admin email and password.",
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    let user;
+    try {
+      user = await User.findOne({ email: normalizedEmail });
+    } catch (dbErr) {
+      user = memoryUsers.find((u) => u.email === normalizedEmail);
+    }
+
+    if (!user) {
+      user = memoryUsers.find((u) => u.email === normalizedEmail);
+    }
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin credentials.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid admin credentials.",
+      });
+    }
+
+    // Role verification
+    if (user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Administrator privileges required.",
+      });
+    }
+
+    const token = generateToken(user);
+
+    return res.status(200).json({
+      success: true,
+      message: "Admin authentication successful. Welcome to Admin Console.",
+      token,
+      user: {
+        id: user._id || user.id,
+        _id: user._id || user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Admin login failed.",
+    });
+  }
+};
+
+// Forgot Password (POST /api/auth/forgot-password)
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -223,24 +298,23 @@ const forgotPassword = async (req, res) => {
       }
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message:
-        "Password reset link simulated! In production, an email is sent. For testing, you can proceed directly.",
+      message: "Password reset request received. You may now reset your password.",
       resetToken,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Reset Password
+// Reset Password (POST /api/auth/reset-password)
 const resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
+    const { token, newPassword, email } = req.body;
     if (!newPassword || newPassword.length < 6) {
       return res.status(400).json({
         success: false,
@@ -257,6 +331,8 @@ const resetPassword = async (req, res) => {
           resetPasswordToken: token,
           resetPasswordExpires: { $gt: Date.now() },
         });
+      } else if (email) {
+        user = await User.findOne({ email: email.toLowerCase().trim() });
       }
 
       if (user) {
@@ -266,24 +342,33 @@ const resetPassword = async (req, res) => {
         await user.save();
       }
     } catch (dbErr) {
-      // Ignore
+      const memUser = memoryUsers.find(
+        (u) =>
+          (token && u.resetPasswordToken === token) ||
+          (email && u.email === email.toLowerCase().trim())
+      );
+      if (memUser) {
+        memUser.password = hashedPassword;
+        memUser.resetPasswordToken = undefined;
+        memUser.resetPasswordExpires = undefined;
+      }
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Password reset successful! You can now log in.",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Get current profile
+// Get profile (GET /api/auth/me)
 const getMe = async (req, res) => {
-  res.status(200).json({
+  return res.status(200).json({
     success: true,
     user: req.user,
   });
@@ -292,7 +377,9 @@ const getMe = async (req, res) => {
 module.exports = {
   registerUser,
   loginUser,
+  adminLogin,
   forgotPassword,
   resetPassword,
   getMe,
+  memoryUsers,
 };

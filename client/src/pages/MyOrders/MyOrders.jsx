@@ -1,13 +1,19 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FaClock, FaBoxOpen, FaArrowRight, FaPizzaSlice } from "react-icons/fa";
+import {
+  FaClock,
+  FaArrowRight,
+  FaPizzaSlice,
+  FaMapMarkerAlt,
+  FaMoneyCheckAlt,
+} from "react-icons/fa";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../config/api";
 
 function MyOrders() {
-  const { token, user } = useAuth();
+  const { token } = useAuth();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +29,7 @@ function MyOrders() {
           setOrders(data.orders);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch my orders error:", err);
       } finally {
         setLoading(false);
       }
@@ -36,10 +42,15 @@ function MyOrders() {
     switch (status) {
       case "Delivered":
         return "bg-green-100 text-green-700 border-green-200";
+      case "Out for Delivery":
       case "On the Way":
         return "bg-blue-100 text-blue-700 border-blue-200 animate-pulse";
+      case "In Kitchen":
       case "Preparing":
         return "bg-amber-100 text-amber-700 border-amber-200";
+      case "Order Received":
+      case "Placed":
+        return "bg-purple-100 text-purple-700 border-purple-200";
       case "Cancelled":
         return "bg-red-100 text-red-700 border-red-200";
       default:
@@ -62,7 +73,7 @@ function MyOrders() {
               My Order <span className="text-red-600">History</span>
             </h1>
             <p className="mt-1 text-gray-500 text-sm">
-              Keep track of all your recent pizza deliveries and cravings.
+              Track your delicious pizza orders and delivery statuses in real-time.
             </p>
           </div>
 
@@ -77,23 +88,25 @@ function MyOrders() {
                 <FaPizzaSlice className="text-red-600" />
               </div>
               <h3 className="text-2xl font-black text-[#252642]">
-                No orders yet!
+                No orders placed yet!
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                You haven't ordered any pizzas yet. Browse our menu and find your favorite slice!
+                You haven't ordered any pizzas yet. Browse our delicious oven-fresh menu and enjoy!
               </p>
               <Link
                 to="/menu"
                 className="mt-6 inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-red-600 text-white font-bold text-sm shadow-md hover:bg-red-700 transition"
               >
-                <span>Order Now</span>
+                <span>Explore Menu</span>
                 <FaArrowRight className="text-xs" />
               </Link>
             </div>
           ) : (
             <div className="space-y-6">
               {orders.map((order) => {
-                const orderId = order._id || order.id;
+                const orderId = order.orderId || order._id || order.id;
+                const itemsList = order.orderedItems || order.items || [];
+
                 return (
                   <div
                     key={orderId}
@@ -102,7 +115,7 @@ function MyOrders() {
                     <div className="space-y-3 flex-1">
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="font-black text-lg text-[#252642]">
-                          #{String(orderId).slice(-6).toUpperCase()}
+                          #{order.orderId || String(orderId).slice(-6).toUpperCase()}
                         </span>
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-extrabold border ${getStatusBadge(
@@ -116,28 +129,43 @@ function MyOrders() {
                           {new Date(order.createdAt).toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
+                            year: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                         </span>
                       </div>
 
-                      {/* Items list preview */}
+                      {/* Items preview */}
                       <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                        {order.items?.map((item, idx) => (
+                        {itemsList.map((item, idx) => (
                           <span
                             key={idx}
                             className="bg-gray-100 px-3 py-1 rounded-lg font-medium"
                           >
-                            {item.quantity}x {item.name}
+                            {item.quantity}x {item.pizzaName || item.name}
                           </span>
                         ))}
                       </div>
 
-                      <div className="text-xs text-gray-400">
-                        Deliver to:{" "}
-                        <span className="text-gray-700 font-medium">
-                          {order.customer?.address}
+                      <div className="text-xs text-gray-500 flex flex-wrap items-center gap-4 pt-1">
+                        <span className="flex items-center gap-1">
+                          <FaMapMarkerAlt className="text-red-500" />
+                          {order.deliveryAddress || order.customer?.address}
+                        </span>
+                        <span className="flex items-center gap-1 font-semibold">
+                          <FaMoneyCheckAlt className="text-gray-400" />
+                          {order.paymentMethod} (
+                          <span
+                            className={
+                              order.paymentStatus === "Paid"
+                                ? "text-green-600 font-bold"
+                                : "text-amber-600 font-bold"
+                            }
+                          >
+                            {order.paymentStatus}
+                          </span>
+                          )
                         </span>
                       </div>
                     </div>
@@ -145,7 +173,7 @@ function MyOrders() {
                     <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-4 sm:pt-0 border-gray-100 gap-2">
                       <div>
                         <span className="text-xs text-gray-400 block sm:text-right">
-                          Total Paid
+                          Total Amount
                         </span>
                         <span className="text-2xl font-black text-red-600">
                           ${Number(order.totalAmount).toFixed(2)}
@@ -153,7 +181,7 @@ function MyOrders() {
                       </div>
 
                       <Link
-                        to={`/order-tracking/${orderId}`}
+                        to={`/order-tracking/${order.orderId || orderId}`}
                         state={{ order }}
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm transition"
                       >

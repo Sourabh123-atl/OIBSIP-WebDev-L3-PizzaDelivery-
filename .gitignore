@@ -1,5 +1,22 @@
+# Dependencies
 node_modules/
-.env
+*/node_modules/
+
+# Production build
 dist/
+client/dist/
+
+# Environment Variables & Secrets (CRITICAL)
+.env
+.env.*
+server/.env
+client/.env
+!.env.example
+!server/.env.example
+!client/.env.example
+
+# IDE & OS files
 .vscode/
+.idea/
 .DS_Store
+*.log

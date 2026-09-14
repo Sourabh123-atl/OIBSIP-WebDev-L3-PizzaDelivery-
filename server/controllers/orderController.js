@@ -1,166 +1,164 @@
 const Order = require("../models/Order");
 
-// In-memory orders for fallback
-let memoryOrders = [
-  {
-    _id: "ord_1001",
-    id: "ord_1001",
-    customer: {
-      name: "Rahul Sharma",
-      email: "rahul@example.com",
-      phone: "+91 98765 43210",
-      address: "Flat 402, Sunshine Heights, MG Road, Pune",
-      notes: "Please call when arriving at the gate",
-    },
-    items: [
-      {
-        name: "Pepperoni Pizza",
-        price: 14.99,
-        quantity: 2,
-        image: "/src/assets/pizzas/pepperoni.png",
-      },
-      {
-        name: "Coca-Cola (500ml)",
-        price: 2.99,
-        quantity: 2,
-        image: "/src/assets/Menu/coke.png",
-      },
-    ],
-    subtotal: 35.96,
-    deliveryFee: 3.99,
-    tax: 3.6,
-    totalAmount: 43.55,
-    paymentMethod: "Cash on Delivery",
-    paymentStatus: "Pending",
-    orderStatus: "Preparing",
-    createdAt: new Date(Date.now() - 25 * 60 * 1000),
-  },
-  {
-    _id: "ord_1002",
-    id: "ord_1002",
-    customer: {
-      name: "Priya Patel",
-      email: "priya@example.com",
-      phone: "+91 91234 56789",
-      address: "Villa 14, Palm Grove Residency, Baner, Pune",
-      notes: "Leave package with security",
-    },
-    items: [
-      {
-        name: "Cheese Burst Pizza",
-        price: 15.49,
-        quantity: 1,
-        image: "/src/assets/pizzas/cheese.png",
-      },
-      {
-        name: "Fudgy Chocolate Brownie",
-        price: 5.99,
-        quantity: 1,
-        image: "/src/assets/Menu/brownie.png",
-      },
-    ],
-    subtotal: 21.48,
-    deliveryFee: 3.99,
-    tax: 2.15,
-    totalAmount: 27.62,
-    paymentMethod: "Credit Card",
-    paymentStatus: "Paid",
-    orderStatus: "On the Way",
-    createdAt: new Date(Date.now() - 10 * 60 * 1000),
-  },
-];
+// In-memory orders for offline dev fallback (Starts clean without fake/static demo orders)
+let memoryOrders = [];
 
-// Create Order
+// Helper to generate a clean Order ID
+const generateOrderId = () => {
+  const timestamp = Date.now().toString().slice(-4);
+  const random = Math.floor(1000 + Math.random() * 9000);
+  return `ORD-${timestamp}${random}`;
+};
+
+// Create a new order (POST /api/orders)
 const createOrder = async (req, res) => {
   try {
-    const {
-      customer,
-      items,
+    const rawItems = req.body.orderedItems || req.body.items || [];
+    const customer = req.body.customer || {};
+
+    const userName = (
+      req.body.userName ||
+      customer.name ||
+      (req.user ? req.user.name : "")
+    ).trim();
+
+    const email = (
+      req.body.email ||
+      customer.email ||
+      (req.user ? req.user.email : "")
+    )
+      .toLowerCase()
+      .trim();
+
+    const phone = (req.body.phone || customer.phone || "").trim();
+    const deliveryAddress = (
+      req.body.deliveryAddress ||
+      customer.address ||
+      ""
+    ).trim();
+    const notes = (req.body.notes || customer.notes || "").trim();
+
+    if (!userName || !deliveryAddress || rawItems.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Order must include customer name, delivery address, and at least one pizza item.",
+      });
+    }
+
+    // Format ordered items to schema
+    const orderedItems = rawItems.map((item) => ({
+      pizzaId: String(item.pizzaId || item.pizza || item._id || item.id || ""),
+      pizzaName: item.pizzaName || item.name || "Custom Pizza",
+      quantity: Number(item.quantity) || 1,
+      size: item.size || "Regular",
+      customizations: item.customizations || "",
+      itemPrice: Number(item.itemPrice !== undefined ? item.itemPrice : item.price) || 0,
+      image: item.image || "",
+    }));
+
+    const subtotal = Number(
+      req.body.subtotal !== undefined
+        ? req.body.subtotal
+        : orderedItems.reduce((acc, it) => acc + it.itemPrice * it.quantity, 0)
+    );
+
+    const deliveryFee = Number(
+      req.body.deliveryFee !== undefined ? req.body.deliveryFee : 3.99
+    );
+
+    const tax = Number(
+      req.body.tax !== undefined ? req.body.tax : (subtotal * 0.1).toFixed(2)
+    );
+
+    const totalAmount = Number(
+      req.body.totalAmount !== undefined
+        ? req.body.totalAmount
+        : (subtotal + deliveryFee + tax).toFixed(2)
+    );
+
+    const paymentMethod = req.body.paymentMethod || "Cash on Delivery";
+    const paymentStatus =
+      req.body.paymentStatus ||
+      (paymentMethod === "Cash on Delivery" ? "Pending" : "Paid");
+
+    const orderId = req.body.orderId || generateOrderId();
+    const userId = req.user ? (req.user._id || req.user.id) : (req.body.userId || null);
+
+    const orderData = {
+      orderId,
+      userId,
+      userName,
+      email,
+      phone,
+      deliveryAddress,
+      notes,
+      orderedItems,
       subtotal,
       deliveryFee,
       tax,
       totalAmount,
       paymentMethod,
-    } = req.body;
-
-    if (!customer || !items || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Order must contain customer details and at least one item.",
-      });
-    }
-
-    if (!customer.name || !customer.phone || !customer.address) {
-      return res.status(400).json({
-        success: false,
-        message: "Customer name, phone, and delivery address are required.",
-      });
-    }
-
-    const orderData = {
-      user: req.user ? req.user._id || req.user.id : null,
-      customer: {
-        name: customer.name.trim(),
-        email: customer.email || (req.user ? req.user.email : "guest@pizzario.com"),
-        phone: customer.phone.trim(),
-        address: customer.address.trim(),
-        notes: customer.notes || "",
-      },
-      items,
-      subtotal: Number(subtotal || 0),
-      deliveryFee: Number(deliveryFee !== undefined ? deliveryFee : 3.99),
-      tax: Number(tax || 0),
-      totalAmount: Number(totalAmount),
-      paymentMethod: paymentMethod || "Cash on Delivery",
-      paymentStatus: paymentMethod === "Cash on Delivery" ? "Pending" : "Paid",
-      orderStatus: "Placed",
+      paymentStatus,
+      orderStatus: "Order Received",
     };
 
     try {
       const order = await Order.create(orderData);
-      memoryOrders.unshift(order);
+      memoryOrders.unshift(order.toObject ? order.toObject() : order);
 
       return res.status(201).json({
         success: true,
-        message: "Order placed successfully! 🍕 Your hot pizza is on the way!",
+        message: "Order placed successfully! 🍕 Your hot pizza is being prepared!",
         order,
       });
     } catch (dbErr) {
+      console.warn("MongoDB save note (using fallback):", dbErr.message);
       const memOrder = {
-        _id: "ord_" + Math.floor(100000 + Math.random() * 900000),
-        id: "ord_" + Math.floor(100000 + Math.random() * 900000),
+        _id: "ord_" + Date.now(),
+        id: "ord_" + Date.now(),
         ...orderData,
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
       memoryOrders.unshift(memOrder);
 
       return res.status(201).json({
         success: true,
-        message: "Order placed successfully! 🍕 (Live tracking active)",
+        message: "Order placed successfully! 🍕 Live order tracking active!",
         order: memOrder,
       });
     }
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message || "Failed to place order.",
     });
   }
 };
 
-// Get user orders
+// Get current user's order history (GET /api/orders/my-orders)
 const getMyOrders = async (req, res) => {
   try {
-    const userId = req.user ? req.user._id || req.user.id : null;
-    const userEmail = req.user ? req.user.email : null;
+    const userId = req.user ? (req.user._id || req.user.id) : null;
+    const userEmail = req.user ? req.user.email.toLowerCase() : null;
+
+    if (!userId && !userEmail) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized. Please log in to view your orders.",
+      });
+    }
 
     try {
-      let orders = [];
-      if (userId) {
-        orders = await Order.find({
-          $or: [{ user: userId }, { "customer.email": userEmail }],
-        }).sort({ createdAt: -1 });
-      }
+      const query = {
+        $or: [
+          ...(userId ? [{ userId }] : []),
+          ...(userEmail ? [{ email: userEmail }] : []),
+        ],
+      };
+
+      const orders = await Order.find(query).sort({ createdAt: -1 });
 
       if (orders && orders.length > 0) {
         return res.status(200).json({
@@ -170,37 +168,44 @@ const getMyOrders = async (req, res) => {
         });
       }
     } catch (dbErr) {
-      // fallback
+      console.warn("DB fetch note:", dbErr.message);
     }
 
-    const filtered = memoryOrders.filter(
-      (o) =>
-        (userId && (o.user === userId || o.user === String(userId))) ||
-        (userEmail &&
-          o.customer &&
-          o.customer.email.toLowerCase() === userEmail.toLowerCase())
-    );
+    // In-memory fallback
+    const filtered = memoryOrders.filter((o) => {
+      const matchesUser = userId && (String(o.userId) === String(userId) || String(o.user) === String(userId));
+      const matchesEmail = userEmail && o.email && o.email.toLowerCase() === userEmail;
+      return matchesUser || matchesEmail;
+    });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: filtered.length,
-      orders: filtered.length > 0 ? filtered : memoryOrders.slice(0, 2),
+      orders: filtered,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message || "Failed to retrieve orders.",
+      message: error.message || "Failed to retrieve order history.",
     });
   }
 };
 
-// Get order by ID (for live order tracker)
+// Get single order by ID or orderId (GET /api/orders/:id)
 const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
 
     try {
-      const order = await Order.findById(id);
+      let order;
+      if (id.startsWith("ORD-")) {
+        order = await Order.findOne({ orderId: id });
+      } else {
+        order = await Order.findOne({
+          $or: [{ _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null }, { orderId: id }],
+        });
+      }
+
       if (order) {
         return res.status(200).json({
           success: true,
@@ -208,10 +213,13 @@ const getOrderById = async (req, res) => {
         });
       }
     } catch (dbErr) {
-      // fallback
+      // Fallback
     }
 
-    const memOrder = memoryOrders.find((o) => o._id === id || o.id === id);
+    const memOrder = memoryOrders.find(
+      (o) => o._id === id || o.id === id || o.orderId === id
+    );
+
     if (memOrder) {
       return res.status(200).json({
         success: true,
@@ -219,40 +227,40 @@ const getOrderById = async (req, res) => {
       });
     }
 
-    res.status(404).json({
+    return res.status(404).json({
       success: false,
-      message: "Order not found with the specified ID.",
+      message: "Order not found.",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-// Get all orders (Admin)
+// Get all orders for Admin (GET /api/admin/orders or GET /api/orders)
 const getAllOrders = async (req, res) => {
   try {
     const { status } = req.query;
-    let query = {};
+    const query = {};
+
     if (status && status !== "All") {
       query.orderStatus = status;
     }
 
     try {
       const orders = await Order.find(query).sort({ createdAt: -1 });
-      if (orders && orders.length > 0) {
-        return res.status(200).json({
-          success: true,
-          count: orders.length,
-          orders,
-        });
-      }
+      return res.status(200).json({
+        success: true,
+        count: orders.length,
+        orders,
+      });
     } catch (dbErr) {
-      // fallback
+      console.warn("DB fetch note:", dbErr.message);
     }
 
+    // In-memory fallback
     let filtered = [...memoryOrders];
     if (status && status !== "All") {
       filtered = filtered.filter(
@@ -260,29 +268,30 @@ const getAllOrders = async (req, res) => {
       );
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: filtered.length,
       orders: filtered,
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message || "Failed to fetch orders.",
+      message: error.message || "Failed to retrieve orders.",
     });
   }
 };
 
-// Update order status (Admin)
+// Update order status (Admin) (PATCH/PUT /api/admin/orders/:id/status or /api/orders/:id/status)
 const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { orderStatus, paymentStatus } = req.body;
 
     const validStatuses = [
-      "Placed",
+      "Order Received",
       "Preparing",
-      "On the Way",
+      "In Kitchen",
+      "Out for Delivery",
       "Delivered",
       "Cancelled",
     ];
@@ -290,47 +299,67 @@ const updateOrderStatus = async (req, res) => {
     if (orderStatus && !validStatuses.includes(orderStatus)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+        message: `Invalid order status. Must be one of: ${validStatuses.join(", ")}`,
       });
     }
 
-    const updateFields = {};
+    const updateFields = { updatedAt: new Date() };
     if (orderStatus) updateFields.orderStatus = orderStatus;
     if (paymentStatus) updateFields.paymentStatus = paymentStatus;
 
     try {
-      const updated = await Order.findByIdAndUpdate(id, updateFields, {
+      const query = {
+        $or: [
+          ...(id.match(/^[0-9a-fA-F]{24}$/) ? [{ _id: id }] : []),
+          { orderId: id },
+        ],
+      };
+
+      const updated = await Order.findOneAndUpdate(query, updateFields, {
         new: true,
       });
+
       if (updated) {
+        // Also keep memory in sync
+        const memIdx = memoryOrders.findIndex(
+          (o) => String(o._id) === String(updated._id) || o.orderId === updated.orderId
+        );
+        if (memIdx !== -1) {
+          memoryOrders[memIdx] = updated.toObject ? updated.toObject() : updated;
+        }
+
         return res.status(200).json({
           success: true,
-          message: `Order status updated to "${orderStatus}"!`,
+          message: `Order status updated to "${orderStatus || updated.orderStatus}"!`,
           order: updated,
         });
       }
     } catch (dbErr) {
-      // fallback
+      console.warn("DB update note:", dbErr.message);
     }
 
-    const index = memoryOrders.findIndex((o) => o._id === id || o.id === id);
+    // In-memory fallback
+    const index = memoryOrders.findIndex(
+      (o) => o._id === id || o.id === id || o.orderId === id
+    );
+
     if (index !== -1) {
       memoryOrders[index] = { ...memoryOrders[index], ...updateFields };
       return res.status(200).json({
         success: true,
-        message: `Order status updated to "${orderStatus}"!`,
+        message: `Order status updated to "${orderStatus || memoryOrders[index].orderStatus}"!`,
         order: memoryOrders[index],
       });
     }
 
-    res.status(404).json({
+    return res.status(404).json({
       success: false,
       message: "Order not found.",
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Failed to update order status.",
     });
   }
 };

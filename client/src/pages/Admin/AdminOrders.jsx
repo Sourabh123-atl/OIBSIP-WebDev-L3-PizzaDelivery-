@@ -1,20 +1,28 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
-  FaFilter,
   FaMapMarkerAlt,
   FaPhoneAlt,
   FaEnvelope,
   FaClock,
   FaSyncAlt,
   FaExternalLinkAlt,
+  FaPizzaSlice,
 } from "react-icons/fa";
 import AdminLayout from "./AdminLayout";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../config/api";
 import { toast } from "react-toastify";
 
-const STATUSES = ["All", "Placed", "Preparing", "On the Way", "Delivered", "Cancelled"];
+const STATUSES = [
+  "All",
+  "Order Received",
+  "Preparing",
+  "In Kitchen",
+  "Out for Delivery",
+  "Delivered",
+  "Cancelled",
+];
 
 function AdminOrders() {
   const { token } = useAuth();
@@ -31,17 +39,17 @@ function AdminOrders() {
 
       const url =
         selectedStatus === "All"
-          ? `${API_BASE_URL}/orders`
-          : `${API_BASE_URL}/orders?status=${selectedStatus}`;
+          ? `${API_BASE_URL}/admin/orders`
+          : `${API_BASE_URL}/admin/orders?status=${encodeURIComponent(selectedStatus)}`;
 
       const res = await fetch(url, { headers });
       const data = await res.json();
       if (data.success && data.orders) {
         setOrders(data.orders);
-        if (isManual) toast.success("Orders refreshed!");
+        if (isManual) toast.success("Orders refreshed from database!");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Fetch admin orders error:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -57,15 +65,15 @@ function AdminOrders() {
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
-        method: "PUT",
+      const res = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+        method: "PATCH",
         headers,
         body: JSON.stringify({ orderStatus: newStatus }),
       });
 
       const data = await res.json();
       if (data.success) {
-        toast.success(`Order #${String(orderId).slice(-6)} set to "${newStatus}"!`);
+        toast.success(`Order #${String(orderId).slice(-6)} updated to "${newStatus}"!`);
         fetchOrders();
       } else {
         toast.error(data.message || "Failed to update order");
@@ -79,10 +87,13 @@ function AdminOrders() {
     switch (status) {
       case "Delivered":
         return "bg-green-100 text-green-700 border-green-200";
-      case "On the Way":
+      case "Out for Delivery":
         return "bg-blue-100 text-blue-700 border-blue-200 animate-pulse";
+      case "In Kitchen":
       case "Preparing":
         return "bg-amber-100 text-amber-700 border-amber-200";
+      case "Order Received":
+        return "bg-purple-100 text-purple-700 border-purple-200";
       case "Cancelled":
         return "bg-red-100 text-red-700 border-red-200";
       default:
@@ -99,7 +110,7 @@ function AdminOrders() {
             Order Fulfillment & Dispatch
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Real-time management of incoming customer orders, tickets, and drivers.
+            Real-time customer orders from MongoDB, kitchen dispatch, and status controls.
           </p>
         </div>
 
@@ -110,7 +121,7 @@ function AdminOrders() {
           className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 shadow-sm transition cursor-pointer"
         >
           <FaSyncAlt className={refreshing ? "animate-spin text-red-600" : ""} />
-          <span>Refresh List</span>
+          <span>Refresh Database</span>
         </button>
       </div>
 
@@ -135,22 +146,26 @@ function AdminOrders() {
       {/* Orders List */}
       {loading ? (
         <div className="py-20 text-center text-sm text-gray-400">
-          Loading orders...
+          Loading live customer orders...
         </div>
       ) : orders.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-sm">
           <span className="text-4xl">📦</span>
           <h3 className="mt-3 text-lg font-bold text-gray-800">
-            No orders found
+            No customer orders found
           </h3>
           <p className="text-xs text-gray-500 mt-1">
-            There are currently no orders in this status category.
+            {selectedStatus === "All"
+              ? "New customer orders will appear here in real-time as they are placed."
+              : `There are currently no orders in the "${selectedStatus}" status.`}
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {orders.map((order) => {
-            const orderId = order._id || order.id;
+            const orderId = order.orderId || order._id || order.id;
+            const itemsList = order.orderedItems || order.items || [];
+
             return (
               <div
                 key={orderId}
@@ -160,7 +175,7 @@ function AdminOrders() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-4">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="text-xl font-black text-gray-900">
-                      #{String(orderId).slice(-6).toUpperCase()}
+                      #{order.orderId || String(orderId).slice(-6).toUpperCase()}
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-extrabold border ${getStatusColor(
@@ -179,18 +194,21 @@ function AdminOrders() {
                     <span className="text-xs font-bold text-gray-500">Update Status:</span>
                     <select
                       value={order.orderStatus}
-                      onChange={(e) => handleStatusChange(orderId, e.target.value)}
+                      onChange={(e) =>
+                        handleStatusChange(order.orderId || order._id || order.id, e.target.value)
+                      }
                       className="px-3.5 py-2 rounded-xl text-xs font-bold bg-gray-50 border border-gray-200 outline-none focus:border-red-600 cursor-pointer"
                     >
-                      <option value="Placed">Placed</option>
+                      <option value="Order Received">Order Received</option>
                       <option value="Preparing">Preparing</option>
-                      <option value="On the Way">On the Way</option>
+                      <option value="In Kitchen">In Kitchen</option>
+                      <option value="Out for Delivery">Out for Delivery</option>
                       <option value="Delivered">Delivered</option>
                       <option value="Cancelled">Cancelled</option>
                     </select>
 
                     <Link
-                      to={`/order-tracking/${orderId}`}
+                      to={`/order-tracking/${order.orderId || order._id || order.id}`}
                       target="_blank"
                       className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition"
                       title="Open Live Tracker"
@@ -208,15 +226,15 @@ function AdminOrders() {
                       Customer Info
                     </h4>
                     <p className="font-bold text-gray-900 text-sm">
-                      {order.customer?.name}
+                      {order.userName || order.customer?.name || "Guest Customer"}
                     </p>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
                       <FaPhoneAlt className="text-[10px]" />
-                      {order.customer?.phone}
+                      {order.phone || order.customer?.phone || "N/A"}
                     </p>
                     <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
                       <FaEnvelope className="text-[10px]" />
-                      {order.customer?.email}
+                      {order.email || order.customer?.email || "N/A"}
                     </p>
                   </div>
 
@@ -227,11 +245,11 @@ function AdminOrders() {
                     </h4>
                     <p className="text-xs text-gray-700 flex items-start gap-1.5 leading-relaxed">
                       <FaMapMarkerAlt className="text-red-500 mt-0.5 flex-shrink-0" />
-                      <span>{order.customer?.address}</span>
+                      <span>{order.deliveryAddress || order.customer?.address}</span>
                     </p>
-                    {order.customer?.notes && (
+                    {order.notes && (
                       <p className="text-xs text-gray-400 italic mt-1 pl-4">
-                        Note: "{order.customer.notes}"
+                        Note: "{order.notes}"
                       </p>
                     )}
                   </div>
@@ -270,11 +288,14 @@ function AdminOrders() {
 
                 {/* Items Ordered List */}
                 <div className="mt-5 pt-4 border-t border-gray-100">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Items ({order.items?.reduce((s, i) => s + i.quantity, 0) || 0})
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
+                    <FaPizzaSlice className="text-red-500" />
+                    <span>
+                      Items Ordered ({itemsList.reduce((s, i) => s + (Number(i.quantity) || 1), 0)})
+                    </span>
                   </h4>
                   <div className="flex flex-wrap gap-2">
-                    {order.items?.map((item, idx) => (
+                    {itemsList.map((item, idx) => (
                       <div
                         key={idx}
                         className="bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2"
@@ -283,10 +304,15 @@ function AdminOrders() {
                           {item.quantity}x
                         </span>
                         <span className="font-bold text-gray-800">
-                          {item.name}
+                          {item.pizzaName || item.name}
                         </span>
-                        <span className="text-gray-400">
-                          (${Number(item.price).toFixed(2)})
+                        {item.size && (
+                          <span className="text-[11px] text-gray-500">
+                            ({item.size})
+                          </span>
+                        )}
+                        <span className="text-gray-400 font-medium">
+                          (${Number(item.itemPrice !== undefined ? item.itemPrice : item.price).toFixed(2)})
                         </span>
                       </div>
                     ))}

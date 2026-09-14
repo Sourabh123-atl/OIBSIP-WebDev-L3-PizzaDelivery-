@@ -8,7 +8,6 @@ import {
   FaUsers,
   FaArrowRight,
   FaSyncAlt,
-  FaCheck,
 } from "react-icons/fa";
 import AdminLayout from "./AdminLayout";
 import { useAuth } from "../../context/AuthContext";
@@ -22,7 +21,7 @@ function AdminDashboard() {
     totalOrders: 0,
     activeOrders: 0,
     totalPizzas: 16,
-    totalUsers: 4,
+    totalUsers: 1,
     recentOrders: [],
   });
   const [loading, setLoading] = useState(true);
@@ -41,7 +40,7 @@ function AdminDashboard() {
         if (isManual) toast.success("Dashboard metrics refreshed!");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Dashboard stats error:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -57,8 +56,8 @@ function AdminDashboard() {
       const headers = { "Content-Type": "application/json" };
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
-        method: "PUT",
+      const res = await fetch(`${API_BASE_URL}/admin/orders/${orderId}/status`, {
+        method: "PATCH",
         headers,
         body: JSON.stringify({ orderStatus: newStatus }),
       });
@@ -181,7 +180,7 @@ function AdminDashboard() {
               Recent Customer Orders
             </h2>
             <p className="text-xs text-gray-400 mt-0.5">
-              Manage incoming tickets and dispatch status
+              Live orders placed by users
             </p>
           </div>
 
@@ -209,31 +208,33 @@ function AdminDashboard() {
                   <th className="px-4 py-3">Total</th>
                   <th className="px-4 py-3">Payment</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 rounded-r-xl">Quick Action</th>
+                  <th className="px-4 py-3 rounded-r-xl">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {stats.recentOrders.map((order) => {
-                  const orderId = order._id || order.id;
+                  const orderId = order.orderId || order._id || order.id;
+                  const itemsList = order.orderedItems || order.items || [];
+
                   return (
                     <tr key={orderId} className="hover:bg-gray-50/70 transition">
                       <td className="px-4 py-4 font-black text-gray-900">
-                        #{String(orderId).slice(-6).toUpperCase()}
+                        #{order.orderId || String(orderId).slice(-6).toUpperCase()}
                       </td>
                       <td className="px-4 py-4">
                         <div className="font-bold text-gray-900">
-                          {order.customer?.name}
+                          {order.userName || order.customer?.name || "Customer"}
                         </div>
                         <div className="text-xs text-gray-400">
-                          {order.customer?.phone}
+                          {order.phone || order.customer?.phone || ""}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-xs">
                         <span className="font-semibold text-gray-800">
-                          {order.items?.length || 0} items
+                          {itemsList.length} items
                         </span>
                         <div className="text-gray-400 truncate max-w-[150px]">
-                          {order.items?.map((it) => it.name).join(", ")}
+                          {itemsList.map((it) => it.pizzaName || it.name).join(", ")}
                         </div>
                       </td>
                       <td className="px-4 py-4 font-black text-red-600">
@@ -248,27 +249,29 @@ function AdminDashboard() {
                             order.paymentStatus === "Paid"
                               ? "text-green-600"
                               : "text-amber-600"
-                          }`}
-                        >
-                          {order.paymentStatus}
-                        </span>
+                        }`}
+                      >
+                        {order.paymentStatus}
+                      </span>
                       </td>
                       <td className="px-4 py-4">
                         <select
                           value={order.orderStatus}
-                          onChange={(e) => updateStatus(orderId, e.target.value)}
+                          onChange={(e) => updateStatus(order.orderId || order._id || order.id, e.target.value)}
                           className="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-50 border border-gray-200 outline-none focus:border-red-600 cursor-pointer"
                         >
-                          <option value="Placed">Placed</option>
+                          <option value="Order Received">Order Received</option>
                           <option value="Preparing">Preparing</option>
-                          <option value="On the Way">On the Way</option>
+                          <option value="In Kitchen">In Kitchen</option>
+                          <option value="Out for Delivery">Out for Delivery</option>
                           <option value="Delivered">Delivered</option>
                           <option value="Cancelled">Cancelled</option>
                         </select>
                       </td>
                       <td className="px-4 py-4 text-xs">
                         <Link
-                          to={`/order-tracking/${orderId}`}
+                          to={`/order-tracking/${order.orderId || order._id || order.id}`}
+                          target="_blank"
                           className="text-red-600 hover:underline font-bold"
                         >
                           Track
@@ -282,7 +285,7 @@ function AdminDashboard() {
           </div>
         ) : (
           <div className="py-10 text-center text-sm text-gray-400">
-            No recent orders found.
+            No recent customer orders found in the database.
           </div>
         )}
       </div>

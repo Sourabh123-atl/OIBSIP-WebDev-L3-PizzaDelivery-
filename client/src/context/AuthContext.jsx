@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
     }
   }, [user, token]);
 
+  // Customer Login (Hits /api/auth/login)
   const login = async (email, password) => {
     setLoading(true);
     try {
@@ -42,7 +43,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Invalid credentials");
+        throw new Error(data.message || "Invalid customer credentials.");
       }
 
       setUser(data.user);
@@ -54,6 +55,37 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Dedicated Admin Login (Hits /api/admin/login)
+  const adminLogin = async (email, password) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Invalid admin credentials.");
+      }
+
+      if (data.user?.role !== "admin") {
+        throw new Error("Access denied. Admin role required.");
+      }
+
+      setUser(data.user);
+      setToken(data.token);
+      return { success: true, user: data.user, message: data.message };
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
+  };
+
+  // Customer Registration (Hits /api/auth/register)
   const register = async (name, email, password) => {
     setLoading(true);
     try {
@@ -67,7 +99,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Registration failed");
+        throw new Error(data.message || "Registration failed.");
       }
 
       setUser(data.user);
@@ -79,6 +111,7 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Universal Logout
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -98,6 +131,7 @@ export function AuthProvider({ children }) {
         isAdmin,
         loading,
         login,
+        adminLogin,
         register,
         logout,
         setUser,

@@ -89,7 +89,7 @@ function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/admin" className="hover:text-red-600 transition font-bold text-red-600">
+                <Link to="/admin/login" className="hover:text-red-600 transition font-bold text-red-600">
                   Admin Console
                 </Link>
               </li>

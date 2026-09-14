@@ -9,7 +9,6 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaShieldAlt,
 } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
@@ -21,16 +20,16 @@ function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const navItems = [
-    { label: "Dashboard", path: "/admin", icon: FaChartPie },
+    { label: "Dashboard", path: "/admin/dashboard", icon: FaChartPie },
     { label: "Orders Management", path: "/admin/orders", icon: FaClipboardList },
-    { label: "Menu & Products", path: "/admin/menu", icon: FaPizzaSlice },
+    { label: "Menu & Inventory", path: "/admin/menu", icon: FaPizzaSlice },
     { label: "Users & Roles", path: "/admin/users", icon: FaUsers },
   ];
 
   const handleLogout = () => {
     logout();
     toast.info("Logged out from admin console.");
-    navigate("/");
+    navigate("/admin/login");
   };
 
   return (
@@ -76,7 +75,9 @@ function AdminLayout({ children }) {
           <nav className="space-y-1.5">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive =
+                location.pathname === item.path ||
+                (item.path === "/admin/dashboard" && location.pathname === "/admin");
 
               return (
                 <Link

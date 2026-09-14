@@ -6,6 +6,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import { ProtectedRoute, AdminRoute } from "./components/ProtectedRoute";
 
+// Customer Pages
 import Home from "./pages/Home/Home";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
@@ -17,7 +18,8 @@ import Checkout from "./pages/Checkout/Checkout";
 import MyOrders from "./pages/MyOrders/MyOrders";
 import OrderTracking from "./pages/OrderTracking/OrderTracking";
 
-// Admin Pages
+// Dedicated Admin Pages
+import AdminLogin from "./pages/Admin/AdminLogin";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminOrders from "./pages/Admin/AdminOrders";
 import AdminMenu from "./pages/Admin/AdminMenu";
@@ -29,7 +31,7 @@ function App() {
       <CartProvider>
         <BrowserRouter>
           <Routes>
-            {/* Public Routes */}
+            {/* Customer Public Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/cart" element={<Cart />} />
@@ -50,9 +52,16 @@ function App() {
               }
             />
 
+            {/* Admin Dedicated Authentication Route */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+
             {/* Admin Protected Routes */}
             <Route
               path="/admin"
+              element={<Navigate to="/admin/dashboard" replace />}
+            />
+            <Route
+              path="/admin/dashboard"
               element={
                 <AdminRoute>
                   <AdminDashboard />
@@ -76,6 +85,14 @@ function App() {
               }
             />
             <Route
+              path="/admin/inventory"
+              element={
+                <AdminRoute>
+                  <AdminMenu />
+                </AdminRoute>
+              }
+            />
+            <Route
               path="/admin/users"
               element={
                 <AdminRoute>
@@ -84,11 +101,11 @@ function App() {
               }
             />
 
-            {/* Catch All */}
+            {/* Catch All Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
-          {/* Toast notifications across entire app */}
+          {/* Toast notifications */}
           <ToastContainer
             position="top-right"
             autoClose={3000}

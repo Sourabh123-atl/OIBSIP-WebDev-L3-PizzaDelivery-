@@ -58,23 +58,23 @@ function Checkout() {
     setLoading(true);
 
     const orderPayload = {
-      customer: {
-        name: formData.name.trim(),
-        email: formData.email.trim() || "guest@pizzario.com",
-        phone: formData.phone.trim(),
-        address: formData.address.trim(),
-        notes: formData.notes.trim(),
-      },
-      items: cart.map((item) => ({
-        pizza: item._id || item.id,
-        name: item.name,
-        price: item.price,
+      userName: formData.name.trim(),
+      email: (formData.email.trim() || user?.email || "customer@example.com").toLowerCase(),
+      phone: formData.phone.trim(),
+      deliveryAddress: formData.address.trim(),
+      notes: formData.notes.trim(),
+      orderedItems: cart.map((item) => ({
+        pizzaId: String(item._id || item.id || ""),
+        pizzaName: item.name,
         quantity: item.quantity,
-        image: item.image,
+        size: item.size || "Regular",
+        customizations: item.customizations || "",
+        itemPrice: Number(item.price),
+        image: item.image || "",
       })),
-      subtotal,
-      deliveryFee,
-      tax,
+      subtotal: Number(subtotal.toFixed(2)),
+      deliveryFee: Number(deliveryFee.toFixed(2)),
+      tax: Number(tax.toFixed(2)),
       totalAmount: Number(finalTotal.toFixed(2)),
       paymentMethod,
     };
@@ -101,7 +101,7 @@ function Checkout() {
       toast.success("Order Placed Successfully! 🍕 Tracking your delivery now!");
       clearCart();
 
-      const orderId = data.order?._id || data.order?.id;
+      const orderId = data.order?.orderId || data.order?._id || data.order?.id;
       navigate(`/order-tracking/${orderId}`, { state: { order: data.order } });
     } catch (error) {
       setLoading(false);
@@ -181,7 +181,7 @@ function Checkout() {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        placeholder="John Doe"
+                        placeholder="Sourabh Patel"
                         className="w-full rounded-xl border border-gray-200 p-3.5 text-sm outline-none focus:border-red-600"
                       />
                     </div>
@@ -210,7 +210,7 @@ function Checkout() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="john@example.com"
+                        placeholder="sourabh@example.com"
                         className="w-full rounded-xl border border-gray-200 p-3.5 text-sm outline-none focus:border-red-600"
                       />
                     </div>

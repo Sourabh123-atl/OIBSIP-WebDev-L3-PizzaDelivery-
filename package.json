@@ -6,10 +6,11 @@
     "install:client": "cd client && npm install",
     "install:server": "cd server && npm install",
     "install:all": "npm run install:server && npm run install:client",
-    "build": "cd client && npm install && npm run build",
+    "build": "npm run install:server && cd client && npm install && npm run build",
     "start": "node server/server.js",
     "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev"
+    "dev:client": "cd client && npm run dev",
+    "seed:admin": "cd server && npm run seed:admin"
   },
   "keywords": ["pizza", "delivery", "mern", "react", "express", "mongodb", "admin-panel"],
   "author": "Sourabh Patel",

@@ -5,6 +5,7 @@ import {
   FaClock,
   FaMotorcycle,
   FaUtensils,
+  FaFire,
   FaMapMarkerAlt,
   FaPhoneAlt,
   FaArrowLeft,
@@ -16,10 +17,11 @@ import { API_BASE_URL } from "../../config/api";
 import { toast } from "react-toastify";
 
 const STAGES = [
-  { key: "Placed", label: "Order Placed", icon: FaClock, desc: "We've received your order" },
-  { key: "Preparing", label: "In the Kitchen", icon: FaUtensils, desc: "Baking fresh with toppings" },
-  { key: "On the Way", label: "Out for Delivery", icon: FaMotorcycle, desc: "Driver on the way to you" },
-  { key: "Delivered", label: "Delivered", icon: FaCheckCircle, desc: "Enjoy your hot pizza!" },
+  { key: "Order Received", label: "Order Received", icon: FaClock, desc: "Order confirmed in kitchen" },
+  { key: "Preparing", label: "Preparing Items", icon: FaUtensils, desc: "Prepping dough & fresh toppings" },
+  { key: "In Kitchen", label: "In Kitchen & Oven", icon: FaFire, desc: "Baking hot to perfection" },
+  { key: "Out for Delivery", label: "Out for Delivery", icon: FaMotorcycle, desc: "Driver on the way to your door" },
+  { key: "Delivered", label: "Delivered", icon: FaCheckCircle, desc: "Delivered! Enjoy your hot pizza! 🍕" },
 ];
 
 function OrderTracking() {
@@ -39,7 +41,7 @@ function OrderTracking() {
         if (isManual) toast.success("Order status refreshed!");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Tracking fetch error:", err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,10 +50,9 @@ function OrderTracking() {
 
   useEffect(() => {
     fetchOrder();
-    // Poll for status updates every 10 seconds
     const interval = setInterval(() => {
       fetchOrder();
-    }, 10000);
+    }, 8000);
     return () => clearInterval(interval);
   }, [id]);
 
@@ -79,13 +80,13 @@ function OrderTracking() {
               Order Not Found
             </h2>
             <p className="mt-2 text-sm text-gray-500">
-              We couldn't find an order with ID: #{id}. Please check your order details or history.
+              We couldn't locate order #{id}. Please check your order ID or view your order history.
             </p>
             <Link
-              to="/menu"
+              to="/my-orders"
               className="mt-6 inline-block px-8 py-3 bg-red-600 text-white font-bold text-sm rounded-xl"
             >
-              Back to Menu
+              View My Orders
             </Link>
           </div>
         </div>
@@ -94,11 +95,13 @@ function OrderTracking() {
     );
   }
 
+  const normalizedStatus = (order.orderStatus || "Order Received").trim();
   const currentStatusIndex = STAGES.findIndex(
-    (s) => s.key.toLowerCase() === (order.orderStatus || "placed").toLowerCase()
+    (s) => s.key.toLowerCase() === normalizedStatus.toLowerCase()
   );
 
-  const isCancelled = order.orderStatus === "Cancelled";
+  const isCancelled = normalizedStatus.toLowerCase() === "cancelled";
+  const itemsList = order.orderedItems || order.items || [];
 
   return (
     <>
@@ -135,7 +138,7 @@ function OrderTracking() {
                   Live Order Tracker
                 </span>
                 <h1 className="text-2xl sm:text-3xl font-black text-[#252642]">
-                  Order #{String(order._id || order.id).slice(-6).toUpperCase()}
+                  Order #{order.orderId || String(order._id || order.id).slice(-6).toUpperCase()}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-400 mt-1">
                   Placed on: {new Date(order.createdAt).toLocaleString()}
@@ -171,14 +174,14 @@ function OrderTracking() {
                       style={{
                         width: `${Math.max(
                           0,
-                          (currentStatusIndex / (STAGES.length - 1)) * 100
+                          (Math.max(0, currentStatusIndex) / (STAGES.length - 1)) * 100
                         )}%`,
                       }}
                     ></div>
                   </div>
 
                   {/* Steps */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative z-10">
                     {STAGES.map((stage, index) => {
                       const Icon = stage.icon;
                       const isCompleted = index <= currentStatusIndex;
@@ -190,7 +193,7 @@ function OrderTracking() {
                           className="flex md:flex-col items-center gap-4 md:gap-2 text-left md:text-center"
                         >
                           <div
-                            className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xl transition duration-500 shadow-md ${
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg transition duration-500 shadow-md ${
                               isCurrent
                                 ? "bg-red-600 text-white scale-110 shadow-red-200 ring-4 ring-red-100"
                                 : isCompleted
@@ -203,13 +206,13 @@ function OrderTracking() {
 
                           <div>
                             <h4
-                              className={`text-sm font-extrabold ${
+                              className={`text-xs sm:text-sm font-extrabold ${
                                 isCompleted ? "text-gray-900" : "text-gray-400"
                               }`}
                             >
                               {stage.label}
                             </h4>
-                            <p className="text-xs text-gray-400 mt-0.5 max-w-[140px] md:mx-auto">
+                            <p className="text-[11px] text-gray-400 mt-0.5 max-w-[120px] md:mx-auto">
                               {stage.desc}
                             </p>
                           </div>
@@ -226,7 +229,7 @@ function OrderTracking() {
                   This order has been cancelled
                 </h3>
                 <p className="text-xs text-red-600 mt-1">
-                  If you have questions or want a refund, please contact support.
+                  If you have questions or wish to re-order, please contact store support.
                 </p>
               </div>
             )}
@@ -243,19 +246,21 @@ function OrderTracking() {
                 <div className="bg-gray-50 rounded-2xl p-4 text-xs sm:text-sm text-gray-700 space-y-2">
                   <p>
                     <strong className="text-gray-900 font-bold">Recipient:</strong>{" "}
-                    {order.customer?.name}
+                    {order.userName || order.customer?.name}
                   </p>
-                  <p className="flex items-center gap-1.5">
-                    <FaPhoneAlt className="text-gray-400 text-xs" />
-                    {order.customer?.phone}
-                  </p>
+                  {(order.phone || order.customer?.phone) && (
+                    <p className="flex items-center gap-1.5">
+                      <FaPhoneAlt className="text-gray-400 text-xs" />
+                      {order.phone || order.customer?.phone}
+                    </p>
+                  )}
                   <p>
                     <strong className="text-gray-900 font-bold">Address:</strong>{" "}
-                    {order.customer?.address}
+                    {order.deliveryAddress || order.customer?.address}
                   </p>
-                  {order.customer?.notes && (
+                  {(order.notes || order.customer?.notes) && (
                     <p className="text-gray-500 italic">
-                      Note: "{order.customer.notes}"
+                      Note: "{order.notes || order.customer?.notes}"
                     </p>
                   )}
                   <p className="pt-2 border-t border-gray-200">
@@ -283,7 +288,7 @@ function OrderTracking() {
                 </h3>
 
                 <div className="bg-gray-50 rounded-2xl p-4 space-y-3 max-h-56 overflow-y-auto">
-                  {order.items?.map((item, idx) => (
+                  {itemsList.map((item, idx) => (
                     <div
                       key={idx}
                       className="flex items-center justify-between text-xs sm:text-sm"
@@ -293,11 +298,11 @@ function OrderTracking() {
                           {item.quantity}x
                         </span>
                         <span className="font-semibold text-gray-800 line-clamp-1 max-w-[180px]">
-                          {item.name}
+                          {item.pizzaName || item.name}
                         </span>
                       </div>
                       <span className="font-bold text-gray-900">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ${((Number(item.itemPrice !== undefined ? item.itemPrice : item.price) || 0) * (Number(item.quantity) || 1)).toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -305,10 +310,10 @@ function OrderTracking() {
                   <div className="pt-3 border-t border-gray-200 space-y-1 text-xs text-gray-500">
                     <div className="flex justify-between">
                       <span>Delivery Fee:</span>
-                      <span>${Number(order.deliveryFee || 3.99).toFixed(2)}</span>
+                      <span>${Number(order.deliveryFee !== undefined ? order.deliveryFee : 3.99).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between font-bold text-sm text-gray-900 pt-1 border-t border-gray-200">
-                      <span>Total Paid:</span>
+                      <span>Total:</span>
                       <span className="text-red-600">
                         ${Number(order.totalAmount).toFixed(2)}
                       </span>

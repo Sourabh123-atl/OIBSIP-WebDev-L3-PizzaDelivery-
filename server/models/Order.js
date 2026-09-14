@@ -1,22 +1,30 @@
 const mongoose = require("mongoose");
 
-const orderItemSchema = new mongoose.Schema({
-  pizza: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Pizza",
-  },
-  name: {
+const orderedItemSchema = new mongoose.Schema({
+  pizzaId: {
     type: String,
-    required: true,
   },
-  price: {
-    type: Number,
+  pizzaName: {
+    type: String,
     required: true,
   },
   quantity: {
     type: Number,
     required: true,
     min: 1,
+    default: 1,
+  },
+  size: {
+    type: String,
+    default: "Regular",
+  },
+  customizations: {
+    type: String,
+    default: "",
+  },
+  itemPrice: {
+    type: Number,
+    required: true,
   },
   image: {
     type: String,
@@ -25,37 +33,46 @@ const orderItemSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema(
   {
-    user: {
-      type: mongoose.Schema.Types.ObjectId,
+    orderId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.Mixed,
       ref: "User",
-      default: null,
+      required: false,
+      index: true,
     },
-    customer: {
-      name: {
-        type: String,
-        required: [true, "Customer name is required"],
-      },
-      email: {
-        type: String,
-        required: [true, "Customer email is required"],
-      },
-      phone: {
-        type: String,
-        required: [true, "Customer phone number is required"],
-      },
-      address: {
-        type: String,
-        required: [true, "Delivery address is required"],
-      },
-      notes: {
-        type: String,
-        default: "",
-      },
+    userName: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    items: [orderItemSchema],
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+    phone: {
+      type: String,
+      default: "",
+    },
+    deliveryAddress: {
+      type: String,
+      required: true,
+    },
+    notes: {
+      type: String,
+      default: "",
+    },
+    orderedItems: [orderedItemSchema],
     subtotal: {
       type: Number,
       required: true,
+      default: 0,
     },
     deliveryFee: {
       type: Number,
@@ -71,7 +88,6 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["Cash on Delivery", "Credit Card", "UPI"],
       default: "Cash on Delivery",
     },
     paymentStatus: {
@@ -81,8 +97,15 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ["Placed", "Preparing", "On the Way", "Delivered", "Cancelled"],
-      default: "Placed",
+      enum: [
+        "Order Received",
+        "Preparing",
+        "In Kitchen",
+        "Out for Delivery",
+        "Delivered",
+        "Cancelled",
+      ],
+      default: "Order Received",
     },
   },
   {

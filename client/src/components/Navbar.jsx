@@ -69,7 +69,7 @@ function Navbar() {
           )}
           {isAdmin && (
             <Link
-              to="/admin"
+              to="/admin/dashboard"
               className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition duration-200 font-bold text-sm"
             >
               <FaShieldAlt className="text-xs" />
@@ -136,7 +136,7 @@ function Navbar() {
 
                   {isAdmin && (
                     <Link
-                      to="/admin"
+                      to="/admin/dashboard"
                       onClick={() => setUserDropdownOpen(false)}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-bold transition"
                     >

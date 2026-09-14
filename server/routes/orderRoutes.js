@@ -18,8 +18,9 @@ router.post("/", optionalProtect, createOrder);
 router.get("/my-orders", protect, getMyOrders);
 router.get("/:id", getOrderById);
 
-// Admin Order Management
+// Admin Order Management (Protected by JWT and Admin Role)
 router.get("/", protect, adminOnly, getAllOrders);
 router.put("/:id/status", protect, adminOnly, updateOrderStatus);
+router.patch("/:id/status", protect, adminOnly, updateOrderStatus);
 
 module.exports = router;
